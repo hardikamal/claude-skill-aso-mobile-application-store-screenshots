@@ -27,6 +27,14 @@ Play outputs are compliance-checked: flattened RGB (no alpha channel), under 8 M
 
 ## Installation
 
+### Quick setup (recommended)
+
+```bash
+bash ~/.claude/skills/aso-store-screenshots/setup.sh
+```
+
+Installs Pillow and @houtini/gemini-mcp, registers the MCP server with Claude Code, and checks the font + `GEMINI_API_KEY`. Idempotent — safe to re-run. Manual steps below if you prefer.
+
 ### 1. Add the skill to Claude Code
 
 ```

@@ -363,8 +363,8 @@ The scaffolds are internal intermediates — do NOT show them to the user or ask
 | Target | [DEVICE MOCKUP] |
 |--------|-----------------|
 | appstore | iPhone 15 Pro mockup — sleek, modern, accurate proportions, Dynamic Island |
-| playstore | modern Android flagship phone mockup (Google Pixel style) with a centered punch-hole front camera |
-| playstore-tablet-7 / -10 | modern Android tablet mockup with slim, uniform bezels |
+| playstore | latest-generation photorealistic Android flagship phone mockup — thin bezels, a centered punch-hole front camera, subtle metallic edge reflections, and a soft contact shadow grounding the device |
+| playstore-tablet-7 / -10 | modern Android tablet mockup with slim, uniform bezels and a soft contact shadow |
 
 **Step 2: Enhance with Nano Banana Pro (3 versions in parallel)**
 
