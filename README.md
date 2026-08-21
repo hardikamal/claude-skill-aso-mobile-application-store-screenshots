@@ -83,7 +83,7 @@ The skill will guide you through each phase interactively. Progress is saved to 
 
 Rather than generating screenshots from scratch (which produces inconsistent results), the skill uses a two-stage approach:
 
-1. **compose.py** creates a deterministic scaffold with exact text positioning, the platform's device frame (iPhone with Dynamic Island, punch-hole Android phone, or slim-bezel Android tablet), and your screenshot composited inside
+1. **compose.py** creates a deterministic scaffold with exact text positioning, the platform's device frame, and your screenshot composited inside. For Play targets it uses **Google's official photorealistic device art** (Pixel 10 Pro / Pixel Tablet — metallic edges, real buttons, camera detail) when available; setup.sh copies it locally from your Android Studio installation. Drawn templates are the fallback.
 2. **Nano Banana Pro** (via Gemini MCP) enhances the scaffold — adding a photorealistic device frame, breakout elements, and visual polish
 
 This ensures consistent layout across all screenshots while letting AI handle the creative enhancement.
@@ -120,11 +120,13 @@ screenshots/
 | `assets/android_device_frame.png` | Android phone frame template |
 | `assets/android_tablet7_frame.png` | 7" Android tablet frame template |
 | `assets/android_tablet10_frame.png` | 10" Android tablet frame template |
+| `assets/pixel_10_pro/`, `assets/pixel_tablet/` | Google device art (photorealistic frames) — copied locally by setup.sh from Android Studio, **not committed to this repo** |
 
 ## Credits
 
 - Original App Store skill by [Adam Lyttle](https://github.com/adamlyttleapps) — [claude-skill-aso-appstore-screenshots](https://github.com/adamlyttleapps/claude-skill-aso-appstore-screenshots)
 - Play Store support added in this fork
+- Photorealistic Pixel frames are Google's device art, bundled with Android Studio; setup.sh copies them from your local installation (they are gitignored, not redistributed)
 
 ## License
 

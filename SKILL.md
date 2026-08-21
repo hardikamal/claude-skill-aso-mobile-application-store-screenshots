@@ -350,6 +350,8 @@ python3 "$SKILL_DIR/compose.py" --platform "$PLATFORM" \
   --output screenshots/$PLATFORM/03-[benefit-slug]/scaffold.png
 ```
 
+**Photorealistic frames:** when `assets/pixel_10_pro/` exists (setup.sh copies Google's official device art from the user's Android Studio installation), Play scaffolds automatically render inside a real Pixel 10 Pro / Pixel Tablet frame — metallic edges, physical buttons, camera detail. Without it, compose.py falls back to the drawn template. `--frame real|flat|auto` overrides.
+
 This outputs pixel-perfect store-sized PNGs (1290×2796 / 1080×1920 / 1200×1920 / 1600×2560) with:
 - Bold white headline text (verb auto-sized to fit canvas width)
 - Platform-correct device frame from a pre-rendered template (iPhone with Dynamic Island for appstore; punch-hole Android phone or slim-bezel Android tablet for the Play targets)

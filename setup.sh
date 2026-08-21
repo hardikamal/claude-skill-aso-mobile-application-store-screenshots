@@ -75,7 +75,24 @@ else
   warn '  claude mcp add gemini-mcp -s user -e GEMINI_API_KEY="$GEMINI_API_KEY" -- npx -y @houtini/gemini-mcp'
 fi
 
-# 6. Skill presence ──────────────────────────────────────────
+# 6. Google device art (photorealistic frames) ───────────────
+DA="/Applications/Android Studio.app/Contents/plugins/android/resources/device-art-resources"
+SKILL_ASSETS="$(cd "$(dirname "$0")" && pwd)/assets"
+for dev in pixel_10_pro pixel_tablet; do
+  if [ -f "$SKILL_ASSETS/$dev/back.webp" ]; then
+    ok "device art present: $dev"
+  elif [ -f "$DA/$dev/back.webp" ]; then
+    cp -R "$DA/$dev" "$SKILL_ASSETS/$dev" && ok "device art copied from Android Studio: $dev"
+  else
+    warn "No device art for $dev (Android Studio not installed?) — Play scaffolds fall back to the drawn frame"
+  fi
+done
+LOCAL_SKILL="$HOME/.claude/skills/aso-store-screenshots"
+if [ -d "$LOCAL_SKILL/assets" ] && [ ! -f "$LOCAL_SKILL/assets/pixel_10_pro/back.webp" ] && [ -f "$SKILL_ASSETS/pixel_10_pro/back.webp" ]; then
+  cp -R "$SKILL_ASSETS/pixel_10_pro" "$SKILL_ASSETS/pixel_tablet" "$LOCAL_SKILL/assets/" 2>/dev/null && ok "device art synced to ~/.claude/skills copy"
+fi
+
+# 7. Skill presence ──────────────────────────────────────────
 if [ -f "$HOME/.claude/skills/aso-store-screenshots/SKILL.md" ]; then
   ok "Skill installed at ~/.claude/skills/aso-store-screenshots"
 else

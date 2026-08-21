@@ -125,6 +125,16 @@ def generate(bg_hex, verb, desc, screenshot_path, output_path):
         y += (bbox[3] - bbox[1]) + DESC_LINE_GAP
 
     # ── Phone with screenshot, bleeding off bottom-right ────────────
+    # Prefer Google's photorealistic device art when present (see compose.py)
+    from compose import real_frame_dir, paste_real_device
+    if real_frame_dir("playstore")[0]:
+        shot = Image.open(screenshot_path).convert("RGBA")
+        canvas = paste_real_device(canvas, "playstore", shot,
+                                   PHONE_X, PHONE_Y, PHONE_W)
+        canvas.convert("RGB").save(output_path, "PNG")
+        print(f"✓ {output_path} ({CANVAS_W}×{CANVAS_H}, feature graphic)")
+        return
+
     frame_path = os.path.join(BASE, "assets", FRAME_FILE)
     if not os.path.exists(frame_path):
         raise SystemExit(

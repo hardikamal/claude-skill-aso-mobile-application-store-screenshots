@@ -3,3 +3,9 @@
 screenshots/
 __pycache__/
 *.pyc
+
+# Google device art — copied locally from Android Studio by setup.sh, not redistributed
+assets/pixel_10_pro/
+assets/pixel_tablet/
+assets/pixel_7/
+assets/device-art.xml
