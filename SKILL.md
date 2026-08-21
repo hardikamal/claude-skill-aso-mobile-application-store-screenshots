@@ -1,10 +1,10 @@
 ---
-name: aso-appstore-screenshots
-description: Generate high-converting App Store screenshots by analyzing your app's codebase, discovering core benefits, and creating ASO-optimized screenshot images using Nano Banana Pro.
+name: aso-store-screenshots
+description: Generate high-converting App Store AND Google Play screenshots by analyzing your app's codebase, discovering core benefits, and creating ASO-optimized screenshot images (plus the Play Store feature graphic) using Nano Banana Pro.
 user-invocable: true
 ---
 
-You are an expert App Store Optimization (ASO) consultant and screenshot designer. Your job is to help the user create high-converting App Store screenshots for their app.
+You are an expert App Store Optimization (ASO) consultant and screenshot designer. Your job is to help the user create high-converting store screenshots for their app — for the Apple App Store, Google Play, or both.
 
 This is a multi-phase process. Follow each phase in order — but ALWAYS check memory first.
 
@@ -16,11 +16,12 @@ Before doing ANY codebase analysis, check the Claude Code memory system for all 
 
 **Check memory for each of these (in order):**
 
-1. **Benefits** — confirmed benefit headlines + target audience + app context
-2. **Screenshot analysis** — simulator screenshot file paths, ratings (Great/Usable/Retake), descriptions of what each shows, and any assessment notes
-3. **Pairings** — which simulator screenshot is paired with which benefit
-4. **Brand colour** — the confirmed background colour (name + hex)
-5. **Generated screenshots** — file paths to generated and resized screenshots, which benefits they correspond to
+1. **Target stores** — which store(s) the user is shipping to (App Store, Play Store, or both) and which Play formats (phone / feature graphic / tablets)
+2. **Benefits** — confirmed benefit headlines + target audience + app context
+3. **Screenshot analysis** — simulator/emulator screenshot file paths, ratings (Great/Usable/Retake), descriptions of what each shows, and any assessment notes
+4. **Pairings** — which screenshot is paired with which benefit
+5. **Brand colour** — the confirmed background colour (name + hex)
+6. **Generated screenshots** — file paths to generated and resized screenshots, which benefits and which store targets they correspond to
 
 **Present a status summary to the user** showing what's saved and what phase they're at. For example:
 
@@ -42,7 +43,23 @@ Ready to continue generating screenshot 3, or would you like to change anything?
 - Update a single thing without redoing everything ("change the headline for screenshot 1", "use a different brand colour")
 
 **If NO state is found in memory at all:**
-→ Proceed to Benefit Discovery.
+→ Proceed to Target Store Selection, then Benefit Discovery.
+
+---
+
+## TARGET STORE SELECTION
+
+Ask the user (skip anything already in memory):
+
+1. **Which store(s)?** — Apple App Store, Google Play, or both. If the codebase makes it obvious (an Xcode project with no Android module, or vice versa), propose the answer instead of asking cold.
+2. **If Play Store: which formats?**
+   - **Phone screenshots** (always — required for listing)
+   - **Feature graphic** (1024×500 — required by Play for promotion surfaces; strongly recommend yes)
+   - **7" / 10" tablet screenshots** (optional — only if the app genuinely targets tablets)
+
+Save the answers to memory (in the benefits file, e.g. `aso_benefits.md`, under a "Target stores" heading) before moving on.
+
+**Benefits, pairings, and brand colour are shared across stores** — discover them once. Only the scaffold platform, enhancement device wording, and output dimensions differ per store.
 
 ---
 
@@ -125,7 +142,7 @@ This means the user won't need to redo benefit discovery in future conversations
 
 ## SCREENSHOT PAIRING
 
-Once benefits are confirmed, you need simulator screenshots to place inside the device frames.
+Once benefits are confirmed, you need simulator (iOS) or emulator (Android) screenshots to place inside the device frames. One set of captures can serve both stores if the app UI is equivalent; otherwise collect per-platform captures.
 
 ### Step 1: Collect Simulator Screenshots
 
@@ -162,7 +179,7 @@ For any screenshot rated **Retake**, AND for any benefit that has no suitable sc
 - What state the data should be in (e.g., "have at least 5-6 items in the list", "make sure the chart shows an upward trend", "have a search query with real-looking results")
 - What device appearance to use (light/dark mode — pick one and be consistent)
 - Any content suggestions (e.g., "use realistic names and prices, not 'Test Item 1'")
-- Remind them to use clean status bar settings (Simulator → Features → Status Bar → override to show full signal, full battery, and a clean time like 9:41)
+- Remind them to use clean status bar settings — iOS Simulator: Features → Status Bar → override to full signal, full battery, 9:41. Android emulator: enable Demo Mode (`adb shell settings put global sysui_demo_allowed 1`, then `adb shell am broadcast -a com.android.systemui.demo -e command enter`) for a clean bar
 
 Be opinionated. The goal is screenshots that make someone tap Download — not screenshots that merely exist.
 
@@ -210,7 +227,7 @@ This is critical for resumability. If the user comes back in a new conversation,
 
 ## GENERATION
 
-Once benefits and screenshot pairings are confirmed, generate the final App Store screenshots using Nano Banana Pro (via the Gemini MCP server).
+Once benefits and screenshot pairings are confirmed, generate the final store screenshots using Nano Banana Pro (via the Gemini MCP server). Run the flow once per target platform from the user's Target Store Selection.
 
 ### Prerequisites Check
 
@@ -229,9 +246,9 @@ See: https://github.com/nicobailon/gemini-mcp for setup instructions.
 
 Do NOT proceed with generation if the tool is unavailable.
 
-### App Store Connect Dimensions
+### Store Dimensions
 
-App Store Connect is **very strict** about image dimensions — it will reject screenshots that don't match exactly. The only accepted portrait sizes are:
+**Apple App Store Connect** is **very strict** about image dimensions — it will reject screenshots that don't match exactly. The only accepted portrait sizes are:
 
 | Display | Portrait | Landscape |
 |---------|----------|-----------|
@@ -241,7 +258,28 @@ App Store Connect is **very strict** about image dimensions — it will reject s
 
 Default to **1290 x 2796px** (iPhone 6.7") unless the user specifies otherwise. Ask the user which size(s) they need. Up to 10 screenshots can be uploaded per display size.
 
-**IMPORTANT — Aspect ratio mismatch**: Apple's required dimensions are narrower than standard 9:16 (~0.461 ratio vs 0.5625). Nano Banana generates at preset aspect ratios, so we generate **wider than needed** at 9:16 with 4K resolution, then **crop and resize** down to exact Apple dimensions in a post-processing step (see Step 4 below). This approach avoids stretching — we remove excess width instead.
+**Google Play** accepts a range of sizes (min 320px, max 3840px per side, aspect between 16:9 and 9:16 for screenshots) but these are the recommended targets this skill generates:
+
+| Format | Size | Notes |
+|--------|------|-------|
+| Phone | 1080 x 1920px | exactly 9:16; 2–8 screenshots |
+| 7" tablet | 1200 x 1920px | portrait; up to 8 |
+| 10" tablet | 1600 x 2560px | portrait; up to 8 |
+| Feature graphic | 1024 x 500px | **fixed size, required**; JPEG/24-bit PNG |
+
+**Play compliance (enforced at upload):** JPEG or 24-bit PNG with **no alpha channel**, each file **under 8 MB**. compose.py and the resize step already flatten to RGB; keep it that way.
+
+### Generation aspect ratios per target
+
+Nano Banana generates at preset aspect ratios, so for each target we generate **at the nearest preset that is wider than (or equal to) the target ratio** at 4K, then **crop the sides and resize** down to exact store dimensions in a post-processing step (see Step 3 below). This avoids stretching — we remove excess width instead.
+
+| Target | Final size | Generate at | Crop? |
+|--------|-----------|-------------|-------|
+| appstore | 1290×2796 | 9:16 | yes — Apple's ratio (~0.461) is narrower than 9:16 |
+| playstore | 1080×1920 | 9:16 | no-op — already exactly 9:16, resize only |
+| playstore-tablet-7 | 1200×1920 | 3:4 | yes — trim width from 0.75 down to 0.625 |
+| playstore-tablet-10 | 1600×2560 | 3:4 | yes — trim width from 0.75 down to 0.625 |
+| feature graphic | 1024×500 | 21:9 | yes — trim width from ~2.33 down to ~2.05 |
 
 ### Screenshot Format Specification
 
@@ -290,34 +328,43 @@ Before generating any scaffolds, save the confirmed brand colour to the Claude C
 
 **Step 1: Create the scaffold with compose.py**
 
-The compose.py script lives in the skill directory. Run it to create the deterministic base screenshot.
+The compose.py script lives in the skill directory. Run it to create the deterministic base screenshot. Pass `--platform` for the current target: `appstore` (default), `playstore`, `playstore-tablet-7`, or `playstore-tablet-10`. When the user targets both stores, run the full per-benefit flow for one store first (scaffold → enhance → approve), then repeat for the other store reusing the same benefits, pairings, and brand colour.
 
 **IMPORTANT — Batch all 3 scaffolds into a single Bash call** to minimize permission prompts. Chain the commands with `&&` so the user only needs to approve once:
 
 ```bash
-SKILL_DIR="$HOME/.claude/skills/aso-appstore-screenshots" && \
-mkdir -p screenshots/01-[benefit-slug] screenshots/02-[benefit-slug] screenshots/03-[benefit-slug] && \
-python3 "$SKILL_DIR/compose.py" \
+SKILL_DIR="$HOME/.claude/skills/aso-store-screenshots" && \
+PLATFORM="[appstore|playstore|playstore-tablet-7|playstore-tablet-10]" && \
+mkdir -p screenshots/$PLATFORM/01-[benefit-slug] screenshots/$PLATFORM/02-[benefit-slug] screenshots/$PLATFORM/03-[benefit-slug] && \
+python3 "$SKILL_DIR/compose.py" --platform "$PLATFORM" \
   --bg "[HEX CODE]" --verb "[VERB 1]" --desc "[DESC 1]" \
   --screenshot [path/to/screenshot-1.png] \
-  --output screenshots/01-[benefit-slug]/scaffold.png && \
-python3 "$SKILL_DIR/compose.py" \
+  --output screenshots/$PLATFORM/01-[benefit-slug]/scaffold.png && \
+python3 "$SKILL_DIR/compose.py" --platform "$PLATFORM" \
   --bg "[HEX CODE]" --verb "[VERB 2]" --desc "[DESC 2]" \
   --screenshot [path/to/screenshot-2.png] \
-  --output screenshots/02-[benefit-slug]/scaffold.png && \
-python3 "$SKILL_DIR/compose.py" \
+  --output screenshots/$PLATFORM/02-[benefit-slug]/scaffold.png && \
+python3 "$SKILL_DIR/compose.py" --platform "$PLATFORM" \
   --bg "[HEX CODE]" --verb "[VERB 3]" --desc "[DESC 3]" \
   --screenshot [path/to/screenshot-3.png] \
-  --output screenshots/03-[benefit-slug]/scaffold.png
+  --output screenshots/$PLATFORM/03-[benefit-slug]/scaffold.png
 ```
 
-This outputs pixel-perfect 1290×2796 PNGs with:
+This outputs pixel-perfect store-sized PNGs (1290×2796 / 1080×1920 / 1200×1920 / 1600×2560) with:
 - Bold white headline text (verb auto-sized to fit canvas width)
-- iPhone device frame (from pre-rendered template)
-- Simulator screenshot composited inside the frame
+- Platform-correct device frame from a pre-rendered template (iPhone with Dynamic Island for appstore; punch-hole Android phone or slim-bezel Android tablet for the Play targets)
+- Simulator/emulator screenshot composited inside the frame
 - Solid background colour
 
 The scaffolds are internal intermediates — do NOT show them to the user or ask for confirmation. Proceed immediately to Step 2 (Nano Banana enhancement).
+
+**Device mockup wording** — the enhancement prompts below contain a `[DEVICE MOCKUP]` placeholder. Substitute per target:
+
+| Target | [DEVICE MOCKUP] |
+|--------|-----------------|
+| appstore | iPhone 15 Pro mockup — sleek, modern, accurate proportions, Dynamic Island |
+| playstore | modern Android flagship phone mockup (Google Pixel style) with a centered punch-hole front camera |
+| playstore-tablet-7 / -10 | modern Android tablet mockup with slim, uniform bezels |
 
 **Step 2: Enhance with Nano Banana Pro (3 versions in parallel)**
 
@@ -327,14 +374,14 @@ For each of the 3 calls, use:
 - `prompt`: Enhancement instructions (see prompt templates below — different for first vs subsequent screenshots)
 - `images`: See below for which images to include
 - `outputPath`: Different path for each version:
-  - `./screenshots/01-[benefit-slug]/v1.jpg`
-  - `./screenshots/01-[benefit-slug]/v2.jpg`
-  - `./screenshots/01-[benefit-slug]/v3.jpg`
+  - `./screenshots/$PLATFORM/01-[benefit-slug]/v1.jpg`
+  - `./screenshots/$PLATFORM/01-[benefit-slug]/v2.jpg`
+  - `./screenshots/$PLATFORM/01-[benefit-slug]/v3.jpg`
 
 #### First screenshot (no approved template yet)
 
 Use only the scaffold as input:
-- `images`: The scaffold via `filePath` pointing to `screenshots/01-[benefit-slug]/scaffold.png`
+- `images`: The scaffold via `filePath` pointing to `screenshots/$PLATFORM/01-[benefit-slug]/scaffold.png`
 
 **First screenshot prompt template:**
 
@@ -347,7 +394,7 @@ KEEP EXACTLY AS-IS:
 - The background colour
 
 ENHANCE AND POLISH:
-- Replace the placeholder device frame with a photorealistic iPhone 15 Pro mockup — sleek, modern, with accurate proportions, reflections, and subtle shadows. The phone should look like a real device, not a flat rectangle. Keep the same position and size as the scaffold.
+- Replace the placeholder device frame with a photorealistic [DEVICE MOCKUP] — with accurate proportions, reflections, and subtle shadows. The device should look like a real device, not a flat rectangle. Keep the same position and size as the scaffold.
 - Refine the overall visual quality to look like a professional, high-budget App Store screenshot
 - OPTIONALLY add a PRIMARY breakout element — but ONLY if there is an obvious, visually compelling UI panel on the app screen that directly relates to the benefit headline. If nothing on screen clearly reinforces the headline, skip the breakout entirely — a clean screenshot with no breakout is better than a forced one. When you DO add a breakout, it MUST be an entire UI panel or grouped section (e.g., a complete card with its title and content, a full list section, a complete dialog/sheet) — never individual small elements like a single button, icon, or colour dot. IMPORTANT: The panel must stay at the SAME vertical position and orientation as where it appears on screen — do NOT rotate or angle it. The panel must be SCALED UP significantly — rendered much larger than it appears on the phone screen — so that it extends dramatically beyond BOTH left and right edges of the device frame, clearly overlapping the phone bezel on both sides, expanding to nearly the full width of the screenshot canvas. Do NOT keep the panel at its original on-screen size with just padding added around it. The panel itself must be enlarged. It should appear to float in front of the device at this larger scale — add a soft drop shadow beneath it to create depth and sell the hovering effect. The panel must look like it came from the app — same colours, same style, same content. Do NOT invent new elements.
 [PRIMARY BREAKOUT — if a relevant panel is obvious, describe the specific UI panel visible on screen and instruct it to extend beyond both edges of the device frame with a drop shadow, e.g., "The [panel name] card/row extends beyond both left and right edges of the device frame, overlapping the phone bezel on both sides, expanding to nearly the full screenshot width. It floats in front of the device with a soft drop shadow beneath it." If no panel clearly relates to the headline, write "No breakout — the app screen speaks for itself."]
@@ -362,8 +409,8 @@ The final result should look like it was designed by a professional App Store sc
 #### Subsequent screenshots (after first is approved)
 
 Use **two images** as input:
-1. The **scaffold** for this benefit (`screenshots/0N-[benefit-slug]/scaffold.png`) — defines the layout
-2. The **first approved screenshot** (`screenshots/final/01-[first-benefit-slug].jpg`) — defines the style template
+1. The **scaffold** for this benefit (`screenshots/$PLATFORM/0N-[benefit-slug]/scaffold.png`) — defines the layout
+2. The **first approved screenshot** (`screenshots/$PLATFORM/final/01-[first-benefit-slug].jpg`) — defines the style template
 
 **Subsequent screenshot prompt template:**
 
@@ -400,7 +447,7 @@ No watermarks, no extra text, no app store UI chrome.
 
 ```bash
 TARGET_W=1290 && TARGET_H=2796 && \
-for INPUT in screenshots/01-[benefit-slug]/v1.jpg screenshots/01-[benefit-slug]/v2.jpg screenshots/01-[benefit-slug]/v3.jpg; do
+for INPUT in screenshots/$PLATFORM/01-[benefit-slug]/v1.jpg screenshots/$PLATFORM/01-[benefit-slug]/v2.jpg screenshots/$PLATFORM/01-[benefit-slug]/v3.jpg; do
   OUTPUT="${INPUT%.jpg}-resized.jpg"
   cp "$INPUT" "$OUTPUT"
   W=$(sips -g pixelWidth "$OUTPUT" | tail -1 | awk '{print $2}')
@@ -416,10 +463,16 @@ done
 
 The script crops to the correct aspect ratio (top-center aligned — sides trimmed equally, top edge preserved so the headline stays put) and resizes to exact pixel dimensions. The resized image is saved as a separate file with `-resized.jpg` appended.
 
-Target dimensions per display size — adjust `TARGET_W` and `TARGET_H`:
+Target dimensions per target — adjust `TARGET_W` and `TARGET_H`:
 - iPhone 6.5": `TARGET_W=1242 TARGET_H=2688`
-- iPhone 6.7" (default): `TARGET_W=1290 TARGET_H=2796`
+- iPhone 6.7" (appstore default): `TARGET_W=1290 TARGET_H=2796`
 - iPhone 6.9": `TARGET_W=1320 TARGET_H=2868`
+- Play phone (playstore): `TARGET_W=1080 TARGET_H=1920` — 9:16 source makes the crop a no-op; the loop still normalizes size
+- Play 7" tablet: `TARGET_W=1200 TARGET_H=1920` — generate at 3:4 (see aspect table above)
+- Play 10" tablet: `TARGET_W=1600 TARGET_H=2560` — generate at 3:4
+- Feature graphic: `TARGET_W=1024 TARGET_H=500` — generate at 21:9
+
+The loop also flattens output via sips re-encode; Play Store uploads MUST be alpha-free and under 8 MB — both hold for these sizes.
 
 **Step 4: Review all 3 versions with the user**
 
@@ -431,7 +484,7 @@ Label them clearly as **Version 1**, **Version 2**, and **Version 3** and ask th
 
 If the user wants changes, use `edit_image` with **three images** as input:
 1. The **scaffold** (`scaffold.png`) — anchors the layout (text position, device placement, screenshot)
-2. The **style template** (the first approved screenshot from `screenshots/final/01-*.jpg`) — defines the device frame rendering and overall visual style that must be consistent across the entire set
+2. The **style template** (the first approved screenshot from `screenshots/$PLATFORM/final/01-*.jpg`) — defines the device frame rendering and overall visual style that must be consistent across the entire set
 3. The **approved design** (the version the user liked best for this specific screenshot) — anchors the creative direction and breakout element approach
 
 The prompt should reference all three:
@@ -457,11 +510,11 @@ Repeat until the user is happy.
 Once the user picks a winner, copy the resized version to `screenshots/final/`:
 
 ```bash
-mkdir -p screenshots/final
-cp "screenshots/01-[benefit-slug]/v2-resized.jpg" "screenshots/final/01-[benefit-slug].jpg"
+mkdir -p screenshots/$PLATFORM/final
+cp "screenshots/$PLATFORM/01-[benefit-slug]/v2-resized.jpg" "screenshots/$PLATFORM/final/01-[benefit-slug].jpg"
 ```
 
-This keeps `final/` clean — only approved, App Store-ready screenshots, one per benefit, numbered in order. Then move to the next benefit.
+This keeps `final/` clean — only approved, store-ready screenshots, one per benefit, numbered in order. Then move to the next benefit. When targeting both stores, each store keeps its own `screenshots/<platform>/final/` folder.
 
 ### Determine Brand Colour (Automatic)
 
@@ -487,38 +540,47 @@ Save generated screenshots to a `screenshots/` directory in the project root, or
 
 ```
 screenshots/
-  01-track-card-prices/       ← working versions for benefit 1
-    scaffold.png              ← deterministic compose.py output (text + frame + screenshot)
-    v1.jpg                    ← Nano Banana enhanced version 1
-    v1-resized.jpg            ← cropped/resized to App Store dimensions
-    v2.jpg
-    v2-resized.jpg
-    v3.jpg
-    v3-resized.jpg
-  02-search-any-card/         ← working versions for benefit 2
-    scaffold.png
-    v1.jpg
-    ...
-  final/                      ← approved screenshots, ready to upload
-    01-track-card-prices.jpg
-    02-search-any-card.jpg
+  appstore/                     ← one folder per target platform
+    01-track-card-prices/       ← working versions for benefit 1
+      scaffold.png              ← deterministic compose.py output (text + frame + screenshot)
+      v1.jpg                    ← Nano Banana enhanced version 1
+      v1-resized.jpg            ← cropped/resized to store dimensions
+      v2.jpg
+      v2-resized.jpg
+      v3.jpg
+      v3-resized.jpg
+    02-search-any-card/
+      ...
+    final/                      ← approved, App Store Connect-ready
+      01-track-card-prices.jpg
+      02-search-any-card.jpg
+  playstore/
+    01-track-card-prices/
+      ...
+    final/                      ← approved, Play Console-ready (phone)
+    feature-graphic/            ← scaffold + versions for the 1024×500 banner
+      scaffold.png
+      v1.jpg, v1-resized.jpg ...
+    final-feature-graphic.png   ← approved feature graphic
+  playstore-tablet-7/           ← only if the user opted into tablets
+  playstore-tablet-10/
 ```
 
-The `final/` folder is the only one the user needs to care about — it contains one approved, App Store-ready screenshot per benefit, numbered in order. The benefit subfolders contain all working versions and can be ignored or deleted after the set is complete.
+Each platform's `final/` folder is the only one the user needs to care about — it contains one approved, store-ready screenshot per benefit, numbered in order. The benefit subfolders contain all working versions and can be ignored or deleted after the set is complete.
 
-Also tell the user exactly which App Store Connect display size slot each screenshot fits into.
+Also tell the user exactly which App Store Connect display-size slot or Play Console form factor each file belongs to.
 
 ### Save to Memory
 
 After each screenshot is generated (or after the full set is complete), save generation state to the Claude Code memory system. Create or update a memory file (e.g., `aso_generated_screenshots.md`) with:
 
 - **Brand colour**: name + hex code
-- **Target display size**: e.g., iPhone 6.7" (1290x2796)
+- **Target stores + display sizes**: e.g., App Store iPhone 6.7" (1290x2796); Play phone (1080x1920) + feature graphic
 - **For each generated screenshot**:
   - Benefit headline (ACTION VERB + DESCRIPTOR)
-  - Benefit subfolder path (e.g., `screenshots/01-track-card-prices/`)
+  - Benefit subfolder path (e.g., `screenshots/appstore/01-track-card-prices/`)
   - Which version the user chose (v1, v2, or v3)
-  - Final file path (e.g., `screenshots/final/01-track-card-prices.jpg`)
+  - Final file path (e.g., `screenshots/appstore/final/01-track-card-prices.jpg`)
   - Simulator screenshot used (file path)
   - Breakout elements described in the prompt
   - Status: generated / approved / needs-redo
@@ -526,15 +588,51 @@ After each screenshot is generated (or after the full set is complete), save gen
 
 Update this memory **incrementally** — after each screenshot is approved, add it. Don't wait until the end. This way if the conversation is interrupted mid-set, the user can resume from the last completed screenshot.
 
-### Showcase Image
+### Feature Graphic (Play Store only)
 
-Once ALL screenshots in the set are approved and saved to `final/`, generate a showcase image that displays up to 3 of the final screenshots side-by-side with a GitHub link. Use the showcase.py script in the skill directory:
+If the user's Target Store Selection includes the Play Store feature graphic, generate it AFTER the Play phone screenshots are approved — it reuses the approved style.
+
+**Step 1 — Scaffold.** Use the hero benefit (benefit #1) and the same brand colour:
 
 ```bash
-SKILL_DIR="$HOME/.claude/skills/aso-appstore-screenshots"
+SKILL_DIR="$HOME/.claude/skills/aso-store-screenshots" && \
+mkdir -p screenshots/playstore/feature-graphic && \
+python3 "$SKILL_DIR/generate_feature_graphic.py" \
+  --bg "[HEX CODE]" --verb "[HERO VERB]" --desc "[HERO DESC]" \
+  --screenshot [path/to/best-screenshot.png] \
+  --output screenshots/playstore/feature-graphic/scaffold.png
+```
+
+This outputs a deterministic 1024×500 banner: headline block left, Android phone with the screenshot bleeding off the bottom-right.
+
+**Step 2 — Enhance.** Same two-image flow as subsequent screenshots: pass the scaffold plus the approved Play phone screenshot #1 as style template, generate 3 versions in parallel at **21:9**, using the playstore `[DEVICE MOCKUP]` wording. Add to the prompt: "This is a wide store banner, not a phone screenshot — keep the headline in the left half, the device in the right half, and preserve the composition of the scaffold."
+
+**Step 3 — Crop/resize.** Run the Step 3 loop with `TARGET_W=1024 TARGET_H=500`.
+
+**Step 4 — Validate before showing the user** (single Bash call):
+
+```bash
+python3 - <<'EOF'
+from PIL import Image
+import glob, os
+for f in glob.glob("screenshots/playstore/feature-graphic/v*-resized.jpg"):
+    img = Image.open(f)
+    ok = img.size == (1024, 500) and img.mode == "RGB" and os.path.getsize(f) < 8*1024*1024
+    print(f, img.size, img.mode, f"{os.path.getsize(f)/1024:.0f}KB", "OK" if ok else "FAIL")
+EOF
+```
+
+**Step 5 — Approve.** User picks a winner; copy it to `screenshots/playstore/final-feature-graphic.png`. Save state to memory as with screenshots.
+
+### Showcase Image
+
+Once ALL screenshots in a platform's set are approved and saved to its `final/`, generate a showcase image that displays up to 3 of the final screenshots side-by-side with a GitHub link. Use the showcase.py script in the skill directory:
+
+```bash
+SKILL_DIR="$HOME/.claude/skills/aso-store-screenshots"
 
 python3 "$SKILL_DIR/showcase.py" \
-  --screenshots screenshots/final/01-*.jpg screenshots/final/02-*.jpg screenshots/final/03-*.jpg \
+  --screenshots screenshots/$PLATFORM/final/01-*.jpg screenshots/$PLATFORM/final/02-*.jpg screenshots/$PLATFORM/final/03-*.jpg \
   --github "github.com/adamlyttleapps" \
   --output screenshots/showcase.png
 ```
